@@ -1,5 +1,9 @@
 <mujoco model="bins_arena">
   <asset>
+    <!-- conveyor belt code-->
+    <mesh file="meshes/Conveyor_belt.stl" name="Conveyor_belt_mesh1" scale="0.1 0.2 0.13"/>
+    <mesh file="meshes/Conveyor_belt.stl" name="Conveyor_belt_mesh2" scale="0.1 0.05 0.13"/>
+    <!--end of conveyor-->
     <texture builtin="gradient" height="256" rgb1=".9 .9 1." rgb2=".2 .3 .4" type="skybox" width="256"/>
     <texture file="../textures/wood-tiles.png" type="2d" name="texplane"/>
     <material name="floorplane" reflectance="0.01" shininess="0.0" specular="0.0" texrepeat="2 2" texture="texplane" texuniform="true"/>
