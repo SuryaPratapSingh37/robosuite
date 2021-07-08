@@ -17,6 +17,7 @@ class ManipulatorModel(RobotModel):
 
     def __init__(self, fname, idn=0):
         # Always run super init first
+        print("init() manipulator_model.py file")
         super().__init__(fname, idn=idn)
 
         # key: gripper name and value: gripper model
@@ -27,6 +28,8 @@ class ManipulatorModel(RobotModel):
         if self.arm_type == "single":
             hand_element = find_elements(root=self.root, tags="body",
                                          attribs={"name": self.eef_name}, return_first=True)
+            #print(hand_element.get("quat", "1 0 0 0"))
+            #print("hello")
             self.hand_rotation_offset = string_to_array(hand_element.get("quat", "1 0 0 0"))[[1, 2, 3, 0]]
         else:   # "bimanual" case
             self.hand_rotation_offset = {}
@@ -51,6 +54,7 @@ class ManipulatorModel(RobotModel):
         Raises:
             ValueError: [Multiple grippers]
         """
+        print("add_gripper() manipulator_model.py file")
         if arm_name is None:
             arm_name = self.eef_name
         if arm_name in self.grippers:

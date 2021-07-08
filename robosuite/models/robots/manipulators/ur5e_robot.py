@@ -44,7 +44,7 @@ class UR5e(ManipulatorModel):
 
     @property
     def _horizontal_radius(self):
-        return 0.5
+        return 1.0
 
     @property
     def arm_type(self):
