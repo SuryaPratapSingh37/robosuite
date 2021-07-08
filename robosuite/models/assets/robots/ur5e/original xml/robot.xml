@@ -10,7 +10,6 @@
         <motor ctrllimited="true" ctrlrange="-28.0 28.0" joint="wrist_3_joint" name="torq_j6"/>
     </actuator>
     <asset>
-        <!-- <mesh name="base_link" file="meshes/base_link.stl" /> -->
         <mesh name="base" file="meshes/base.stl" />
         <mesh name="shoulder" file="meshes/shoulder.stl" />
         <mesh name="upperarm" file="meshes/upperarm.stl" />
