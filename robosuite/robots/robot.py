@@ -54,6 +54,7 @@ class Robot(object):
     ):
         # Set relevant attributes
         self.sim = None                                     # MjSim this robot is tied to
+        # print("init() robot.py")
         self.name = robot_type                              # Specific robot to instantiate
         self.idn = idn                                      # Unique ID of this robot
         self.robot_model = None                             # object holding robot model-specific info
@@ -87,12 +88,14 @@ class Robot(object):
         """
         Loads controller to be used for dynamic trajectories.
         """
+        print("_load_controller() robot.py")
         raise NotImplementedError
 
     def load_model(self):
         """
         Loads robot and optionally add grippers.
         """
+        print("load_model() robot.py")
         self.robot_model = create_robot(self.name, idn=self.idn)
 
         # Add mount if specified
@@ -112,6 +115,7 @@ class Robot(object):
         Args:
             sim (MjSim): New simulation being instantiated to replace the old one
         """
+        print("reset_sim() robot.py")
         self.sim = sim
 
     def reset(self, deterministic=False):
@@ -125,7 +129,9 @@ class Robot(object):
         Raises:
             ValueError: [Invalid noise type]
         """
+        print("reset() robot.py")
         init_qpos = np.array(self.init_qpos)
+        #print(init_qpos)
         if not deterministic:
             # Determine noise
             if self.initialization_noise["type"] == "gaussian":
@@ -156,7 +162,10 @@ class Robot(object):
         Sets up necessary reference for robots, grippers, and objects.
         """
         # indices for joints in qpos, qvel
+        print("setup_references() robot.py")
         self.robot_joints = self.robot_model.joints
+        #print("robot_joints in robot.py",self.robot_joints)
+        #print("joint values in robot.py",np.array([self.sim.data.get_joint_qpos("robot0_branch1_joint"),self.sim.data.get_joint_qpos("robot0_branch1_pivot_joint"),self.sim.data.get_joint_qpos("robot0_branch1_linear_joint"),self.sim.data.get_joint_qpos("robot0_branch1_linear_revolute_joint"),self.sim.data.get_joint_qpos("robot0_branch1_clevis_joint"),self.sim.data.get_joint_qpos("robot0_branch1_ee_joint"),self.sim.data.get_joint_qpos("robot0_branch2_joint"),self.sim.data.get_joint_qpos("robot0_branch2_pivot_joint"),self.sim.data.get_joint_qpos("robot0_branch2_linear_joint"),self.sim.data.get_joint_qpos("robot0_branch2_linear_revolute_joint"),self.sim.data.get_joint_qpos("robot0_branch2_clevis_joint"),self.sim.data.get_joint_qpos("robot0_branch2_ee_joint"),self.sim.data.get_joint_qpos("robot0_branch3_joint"),self.sim.data.get_joint_qpos("robot0_branch3_pivot_joint"),self.sim.data.get_joint_qpos("robot0_branch3_linear_joint"),self.sim.data.get_joint_qpos("robot0_branch3_linear_revolute_joint"),self.sim.data.get_joint_qpos("robot0_branch3_clevis_joint"),self.sim.data.get_joint_qpos("robot0_branch3_ee_joint")]))
         self._ref_joint_pos_indexes = [
             self.sim.model.get_joint_qpos_addr(x) for x in self.robot_joints
         ]
@@ -171,6 +180,10 @@ class Robot(object):
         ]
 
         # indices for joint pos actuation, joint vel actuation, gripper actuation
+        #print(self.robot_model.joints)
+        #print(self.sim.data.ctrl[:])
+        #print(self._action_dim)
+        #print(self.robot_model.actuators)
         self._ref_joint_actuator_indexes = [
             self.sim.model.actuator_name2id(actuator)
             for actuator in self.robot_model.actuators
@@ -184,6 +197,7 @@ class Robot(object):
             OrderedDict: Dictionary mapping observable names to its corresponding Observable object
         """
         # Get prefix from robot model to avoid naming clashes for multiple robots and define observables modality
+        print("setup_observables() robot.py")
         pf = self.robot_model.naming_prefix
         pre_compute = f"{pf}joint_pos"
         modality = f"{pf}proprio"
@@ -292,7 +306,7 @@ class Robot(object):
         """
         # Torque limit values pulled from relevant robot.xml file
         low = self.sim.model.actuator_ctrlrange[self._ref_joint_actuator_indexes, 0]
-        high = self.sim.model.actuator_ctrlrange[self._ref_joint_actuator_indexes, 1]
+        high =self.sim.model.actuator_ctrlrange[self._ref_joint_actuator_indexes, 1]
 
         return low, high
 
