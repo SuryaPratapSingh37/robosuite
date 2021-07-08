@@ -243,6 +243,8 @@ def string_to_array(string):
     Returns:
         np.array: Numerical array equivalent of @string
     """
+    #print(type(string))
+    #print(float(x) for x in string.split(" "))
     return np.array([float(x) for x in string.split(" ")])
 
 
@@ -641,6 +643,7 @@ def recolor_collision_geoms(root, rgba, exclude=None):
     """
     # Check this body
     if root.tag == "geom" and root.get("group") in {None, "0"} and (exclude is None or not exclude(root)):
+        print(root.get("name"))
         root.set("rgba", array_to_string(rgba))
         root.attrib.pop("material", None)
 
