@@ -4,7 +4,7 @@ from robosuite.utils.mjcf_utils import xml_path_completion
 from robosuite.utils.mjcf_utils import array_to_string
 
 
-class BinsArena(Arena):
+class ConveyorBeltArena(Arena):
     """
     Workspace that contains two bins placed side by side.
 
@@ -15,7 +15,7 @@ class BinsArena(Arena):
     """
 
     def __init__(
-        self, bin1_pos=(0.1, -0.5, 0.8), Conveyor_belt1_pos=(0, 0, 0.4), table_full_size=(0.39, 0.49, 0.82), table_friction=(1, 0.005, 0.0001)
+        self, bin1_pos=(0.1, -0.5, 0.8), table_full_size=(0.39, 0.49, 0.82), table_friction=(1, 0.005, 0.0001)
     ):
         super().__init__(xml_path_completion("arenas/bins_arena.xml"))
 
