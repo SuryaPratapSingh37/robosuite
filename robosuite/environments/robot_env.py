@@ -129,6 +129,7 @@ class RobotEnv(MujocoEnv):
     ):
         # First, verify that correct number of robots are being inputted
         self.env_configuration = env_configuration
+        # print("init() robot_env.py")
         self._check_robot_configuration(robots)
 
         # Robot
@@ -206,6 +207,7 @@ class RobotEnv(MujocoEnv):
                 options specified.
         """
         # Run superclass method first
+        # print("visualize() robot_env.py")
         super().visualize(vis_settings=vis_settings)
         # Loop over robots to visualize them independently
         for robot in self.robots:
@@ -219,6 +221,7 @@ class RobotEnv(MujocoEnv):
         Returns:
             set: All components that can be individually visualized for this environment
         """
+        # print("_visualizations() robot_env.py")
         vis_set = super()._visualizations
         vis_set.add("robots")
         return vis_set
@@ -234,6 +237,7 @@ class RobotEnv(MujocoEnv):
                 - (np.array) minimum (low) action values
                 - (np.array) maximum (high) action values
         """
+        # print("action_spec() robot_env.py")
         low, high = [], []
         for robot in self.robots:
             lo, hi = robot.action_limits
@@ -248,6 +252,7 @@ class RobotEnv(MujocoEnv):
         Returns:
             int: Action space dimension
         """
+        # print("action_dim() robot_env.py")
         return self._action_dim
 
     @staticmethod
@@ -263,12 +268,14 @@ class RobotEnv(MujocoEnv):
             list: input @inp converted into a list of length @length
         """
         # convert to list if necessary
+        # print("_input2list() robot_env.py")
         return list(inp) if type(inp) is list or type(inp) is tuple else [inp for _ in range(length)]
 
     def _load_model(self):
         """
         Loads an xml model, puts it in self.model
         """
+        # print("_load_model() robot_env.py")
         super()._load_model()
 
         # Load robots
@@ -280,6 +287,7 @@ class RobotEnv(MujocoEnv):
         index or a list of indices that point to the corresponding elements
         in a flatten array, which is how MuJoCo stores physical simulation data.
         """
+        # print("_setup_references() robot_env.py")
         super()._setup_references()
 
         # Setup robot-specific references as well (note: requires resetting of sim for robot first)
@@ -295,6 +303,7 @@ class RobotEnv(MujocoEnv):
         Returns:
             OrderedDict: Dictionary mapping observable names to its corresponding Observable object
         """
+        # print("_setup_observables() robot_env.py")
         observables = super()._setup_observables()
         # Loop through all robots and grab their observables, adding it to the proprioception modality
         for robot in self.robots:
@@ -343,6 +352,7 @@ class RobotEnv(MujocoEnv):
                 names (list): array of corresponding observable names
         """
         # Make sure we get correct convention
+        # print("_create_camera_sensors() robot_env.py")
         convention = IMAGE_CONVENTION_MAPPING[macros.IMAGE_CONVENTION]
 
         # Create sensor information
@@ -387,6 +397,7 @@ class RobotEnv(MujocoEnv):
         Resets simulation internal configurations.
         """
         # Run superclass reset functionality
+        # print("_reset_internal() robot_env.py")
         super()._reset_internal()
 
         # Reset controllers
@@ -397,8 +408,12 @@ class RobotEnv(MujocoEnv):
 
         # Reset robot and update action space dimension along the way
         for robot in self.robots:
+            #print("robot")
             robot.reset(deterministic=self.deterministic_reset)
+            #print(robot.action_dim)
+            #print("ho")
             self._action_dim += robot.action_dim
+            # print("action_dimension in robot_env.py",self._action_dim)
 
         # Update cameras if appropriate
         if self.use_camera_obs:
@@ -445,7 +460,11 @@ class RobotEnv(MujocoEnv):
         Raises:
             AssertionError: [Invalid action dimension]
         """
+        #super()._pre_action(action)
         # Verify that the action is the correct dimension
+        # print("_pre_action() robot_env.py",action)
+        # print("sim.data.ctrl[:] in robot_env.py",self.sim.data.ctrl[:])
+        #print(self.action_dim)
         assert len(action) == self.action_dim, \
             "environment got invalid action dimension -- expected {}, got {}".format(
                 self.action_dim, len(action))
@@ -454,6 +473,7 @@ class RobotEnv(MujocoEnv):
         cutoff = 0
         for idx, robot in enumerate(self.robots):
             robot_action = action[cutoff:cutoff+robot.action_dim]
+            #print("robot_action",robot_action)
             robot.control(robot_action, policy_step=policy_step)
             cutoff += robot.action_dim
 
@@ -462,6 +482,7 @@ class RobotEnv(MujocoEnv):
         Instantiates robots and stores them within the self.robots attribute
         """
         # Loop through robots and instantiate Robot object for each
+        # print("_load_robots() robot_env.py")
         for idx, (name, config) in enumerate(zip(self.robot_names, self.robot_configs)):
             # Create the robot instance
             self.robots[idx] = ROBOT_CLASS_MAPPING[name](robot_type=name, idn=idx, **config)
@@ -472,12 +493,14 @@ class RobotEnv(MujocoEnv):
         """
         Runs superclass method by default
         """
+        # print("reward() robot_env.py")
         return super().reward(action)
 
     def _check_success(self):
         """
         Runs superclass method by default
         """
+        # print("_check_success() robot_env.py")
         return super()._check_success()
 
     def _check_robot_configuration(self, robots):
@@ -488,4 +511,5 @@ class RobotEnv(MujocoEnv):
         Args:
             robots (str or list of str): Inputted requested robots at the task-level environment
         """
+        # print("_check_robot_configuration() robot_env.py")
         raise NotImplementedError

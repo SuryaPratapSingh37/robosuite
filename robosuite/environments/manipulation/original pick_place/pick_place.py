@@ -167,7 +167,7 @@ class PickPlace(SingleArmEnv):
         use_camera_obs=True,
         use_object_obs=True,
         reward_scale=1.0,
-        reward_shaping=True,
+        reward_shaping=False,
         single_object_mode=0,
         object_type=None,
         has_renderer=False,
@@ -188,13 +188,12 @@ class PickPlace(SingleArmEnv):
         # task settings
         self.single_object_mode = single_object_mode
         print("pick-place environment file")
-        self.object_to_id = {"milk": 0, "bread": 1, "cereal": 2, "can": 3, "iphone12promax": 4}
+        self.object_to_id = {"milk": 0, "bread": 1, "cereal": 2, "can": 3, "iPhone": 4, "iPhone12ProMax": 5}
         self.object_id_to_sensors = {}                    # Maps object id to sensor names for that object
-        self.obj_names = ["Milk", "Bread", "Cereal", "Can", "iPhone12ProMax"]
+        self.obj_names = ["Milk", "Bread", "Cereal", "Can", "iPhone", "iPhone12ProMax"]
         if object_type is not None:
-            print("object_type", object_type)
             assert (
-                    object_type in self.object_to_id.keys()                    
+                    object_type in self.object_to_id.keys()
             ), "invalid @object_type argument - choose one of {}".format(
                 list(self.object_to_id.keys())
             )
@@ -297,14 +296,13 @@ class PickPlace(SingleArmEnv):
                 - (float) hovering reward
         """
 
-        reach_mult = 0.1*1000
-        grasp_mult = 0.35*1000
-        lift_mult = 0.5*1000
-        hover_mult = 0.7*1000
+        reach_mult = 0.1
+        grasp_mult = 0.35
+        lift_mult = 0.5
+        hover_mult = 0.7
 
         # filter out objects that are already in the correct bins
         active_objs = []
-        print("self.objects", self.objects)
         for i, obj in enumerate(self.objects):
             if self.objects_in_bins[i]:
                 continue
@@ -486,7 +484,7 @@ class PickPlace(SingleArmEnv):
         self.objects = []
         self.visual_objects = []
         for vis_obj_cls, obj_name in zip(
-                (MilkVisualObject, BreadVisualObject, CerealVisualObject, CanVisualObject, iPhone12ProMaxVisualObject),
+                (MilkVisualObject, BreadVisualObject, CerealVisualObject, CanVisualObject, iPhoneVisualObject, iPhone12ProMaxVisualObject),
                 self.obj_names,
         ):
             vis_name = "Visual" + obj_name
@@ -494,7 +492,7 @@ class PickPlace(SingleArmEnv):
             self.visual_objects.append(vis_obj)
 
         for obj_cls, obj_name in zip(
-                (MilkObject, BreadObject, CerealObject, CanObject, iPhone12ProMaxObject),
+                (MilkObject, BreadObject, CerealObject, CanObject, iPhoneObject, iPhone12ProMaxObject),
                 self.obj_names,
         ):
             obj = obj_cls(name=obj_name)
@@ -686,8 +684,6 @@ class PickPlace(SingleArmEnv):
                     self.object_id = i
                     break
         elif self.single_object_mode == 2:
-            print("self.object_id", self.object_id)
-            print("self.objects", self.objects)
             self.obj_to_use = self.objects[self.object_id].name
         if self.single_object_mode in {1, 2}:
             obj_names.remove(self.obj_to_use)
@@ -824,4 +820,4 @@ class PickPlaceiPhone(PickPlace):
         assert (
                 "single_object_mode" not in kwargs and "object_type" not in kwargs
         ), "invalid set of arguments"
-        super().__init__(single_object_mode=2, object_type="iphone12promax", **kwargs)
+        super().__init__(single_object_mode=2, object_type="iPhone12ProMax", **kwargs)

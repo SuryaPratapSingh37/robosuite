@@ -8,18 +8,10 @@ from robosuite.environments.manipulation.single_arm_env import SingleArmEnv
 from robosuite.models.arenas import BinsArena
 from robosuite.models.objects import (
     MilkObject,
-    BreadObject,
-    CerealObject,
-    CanObject,
-    iPhoneObject,
     iPhone12ProMaxObject,
 )
 from robosuite.models.objects import (
     MilkVisualObject,
-    BreadVisualObject,
-    CerealVisualObject,
-    CanVisualObject,
-    iPhoneVisualObject,
     iPhone12ProMaxVisualObject,
 )
 from robosuite.models.tasks import ManipulationTask
@@ -161,15 +153,15 @@ class PickPlace(SingleArmEnv):
         gripper_types="default",
         initialization_noise="default",
         table_full_size=(0.39, 0.49, 0.82),
-        table_friction=(1, 0.005, 0.0001),
-        bin1_pos=(0.1, -0.25, 0.8),
-        bin2_pos=(0.1, 0.28, 0.8),
+        table_friction=(0.95, 0.3, 0.1),
+        Conveyor_belt1_pos=(0, 0, 0.4),
+        Conveyor_belt2_pos=(0, 0, 0.4),
         use_camera_obs=True,
         use_object_obs=True,
         reward_scale=1.0,
-        reward_shaping=True,
-        single_object_mode=0,
-        object_type=None,
+        reward_shaping=False,
+        single_object_mode=2,
+        object_type="iPhone12ProMax",
         has_renderer=False,
         has_offscreen_renderer=True,
         render_camera="frontview",
@@ -188,13 +180,12 @@ class PickPlace(SingleArmEnv):
         # task settings
         self.single_object_mode = single_object_mode
         print("pick-place environment file")
-        self.object_to_id = {"milk": 0, "bread": 1, "cereal": 2, "can": 3, "iphone12promax": 4}
+        self.object_to_id = {"iPhone12ProMax": 0}
         self.object_id_to_sensors = {}                    # Maps object id to sensor names for that object
-        self.obj_names = ["Milk", "Bread", "Cereal", "Can", "iPhone12ProMax"]
+        self.obj_names = ["iPhone12ProMax"]
         if object_type is not None:
-            print("object_type", object_type)
             assert (
-                    object_type in self.object_to_id.keys()                    
+                    object_type in self.object_to_id.keys()
             ), "invalid @object_type argument - choose one of {}".format(
                 list(self.object_to_id.keys())
             )
@@ -208,8 +199,8 @@ class PickPlace(SingleArmEnv):
         self.table_friction = table_friction
 
         # settings for bin position
-        self.bin1_pos = np.array(bin1_pos)
-        self.bin2_pos = np.array(bin2_pos)
+        self.Conveyor_belt1_pos = np.array(Conveyor_belt1_pos)
+        self.Conveyor_belt2_pos = np.array(Conveyor_belt2_pos)
 
         # reward configuration
         self.reward_scale = reward_scale
@@ -271,7 +262,7 @@ class PickPlace(SingleArmEnv):
         """
         # compute sparse rewards
         self._check_success()
-        reward = np.sum(self.objects_in_bins)
+        reward = np.sum(self.objects_on_belts)
 
         # add in shaped rewards
         if self.reward_shaping:
@@ -297,16 +288,15 @@ class PickPlace(SingleArmEnv):
                 - (float) hovering reward
         """
 
-        reach_mult = 0.1*1000
-        grasp_mult = 0.35*1000
-        lift_mult = 0.5*1000
-        hover_mult = 0.7*1000
+        reach_mult = 0.1
+        grasp_mult = 0.35
+        lift_mult = 0.5
+        hover_mult = 0.7
 
         # filter out objects that are already in the correct bins
         active_objs = []
-        print("self.objects", self.objects)
         for i, obj in enumerate(self.objects):
-            if self.objects_in_bins[i]:
+            if self.objects_on_belts[i]:
                 continue
             active_objs.append(obj)
 
@@ -323,8 +313,6 @@ class PickPlace(SingleArmEnv):
                 ) for active_obj in active_objs
             ]
             r_reach = (1 - np.tanh(10.0 * min(dists))) * reach_mult
-            print("distance to object",dists)
-            print("r_reach",r_reach)
 
         # grasping reward for touching any objects of interest
         r_grasp = int(self._check_grasp(
@@ -335,7 +323,7 @@ class PickPlace(SingleArmEnv):
         # lifting reward for picking up an object
         r_lift = 0.
         if active_objs and r_grasp > 0.:
-            z_target = self.bin2_pos[2] + 0.25
+            z_target = self.Conveyor_belt2[2] + 0.25
             object_z_locs = self.sim.data.body_xpos[[self.obj_body_id[active_obj.name]
                                                      for active_obj in active_objs]][:, 2]
             z_dists = np.maximum(z_target - object_z_locs, 0.)
@@ -346,53 +334,53 @@ class PickPlace(SingleArmEnv):
         # hover reward for getting object above bin
         r_hover = 0.
         if active_objs:
-            target_bin_ids = [self.object_to_id[active_obj.name.lower()] for active_obj in active_objs]
+            target_belt_ids = [self.object_to_id[active_obj.name.lower()] for active_obj in active_objs]
             # segment objects into left of the bins and above the bins
             object_xy_locs = self.sim.data.body_xpos[[self.obj_body_id[active_obj.name]
                                                      for active_obj in active_objs]][:, :2]
             y_check = (
-                    np.abs(object_xy_locs[:, 1] - self.target_bin_placements[target_bin_ids, 1])
-                    < self.bin_size[1] / 4.
+                    np.abs(object_xy_locs[:, 1] - self.target_belt_placements[target_belt_ids, 1])
+                    < self.Conveyor_belt_size[1] / 4.
             )
             x_check = (
-                    np.abs(object_xy_locs[:, 0] - self.target_bin_placements[target_bin_ids, 0])
-                    < self.bin_size[0] / 4.
+                    np.abs(object_xy_locs[:, 0] - self.target_belt_placements[target_belt_ids, 0])
+                    < self.Conveyor_belt_size[0] / 4.
             )
-            objects_above_bins = np.logical_and(x_check, y_check)
-            objects_not_above_bins = np.logical_not(objects_above_bins)
+            objects_above_belts = np.logical_and(x_check, y_check)
+            objects_not_above_belts = np.logical_not(objects_above_belts)
             dists = np.linalg.norm(
-                self.target_bin_placements[target_bin_ids, :2] - object_xy_locs, axis=1
+                self.target_belt_placements[target_belt_ids, :2] - object_xy_locs, axis=1
             )
             # objects to the left get r_lift added to hover reward,
             # those on the right get max(r_lift) added (to encourage dropping)
             r_hover_all = np.zeros(len(active_objs))
-            r_hover_all[objects_above_bins] = lift_mult + (
-                    1 - np.tanh(10.0 * dists[objects_above_bins])
+            r_hover_all[objects_above_belts] = lift_mult + (
+                    1 - np.tanh(10.0 * dists[objects_above_belts])
             ) * (hover_mult - lift_mult)
-            r_hover_all[objects_not_above_bins] = r_lift + (
-                    1 - np.tanh(10.0 * dists[objects_not_above_bins])
+            r_hover_all[objects_not_above_belts] = r_lift + (
+                    1 - np.tanh(10.0 * dists[objects_not_above_belts])
             ) * (hover_mult - lift_mult)
             r_hover = np.max(r_hover_all)
 
         return r_reach, r_grasp, r_lift, r_hover
 
-    def not_in_bin(self, obj_pos, bin_id):
+    def not_on_belt(self, obj_pos, belt_id):
 
-        bin_x_low = self.bin2_pos[0]
-        bin_y_low = self.bin2_pos[1]
-        if bin_id == 0 or bin_id == 2:
-            bin_x_low -= self.bin_size[0] / 2
-        if bin_id < 2:
-            bin_y_low -= self.bin_size[1] / 2
+        Conveyor_belt_x_low = self.Conveyor_belt2_pos[0]
+        Conveyor_belt_y_low = self.Conveyor_belt2_pos[1]
+        if belt_id == 0 or belt_id == 2:
+            Conveyor_belt_x_low -= self.Conveyor_belt_size[0] / 2
+        if belt_id < 2:
+            Conveyor_belt_y_low -= self.Conveyor_belt_size[1] / 2
 
-        bin_x_high = bin_x_low + self.bin_size[0] / 2
-        bin_y_high = bin_y_low + self.bin_size[1] / 2
+        Conveyor_belt_x_high = Conveyor_belt_x_low + self.Conveyor_belt_size[0] / 2
+        Conveyor_belt_y_high = Conveyor_belt_y_low + self.Conveyor_belt_size[1] / 2
 
         res = True
         if (
-            bin_x_low < obj_pos[0] < bin_x_high
-            and bin_y_low < obj_pos[1] < bin_y_high
-            and self.bin2_pos[2] < obj_pos[2] < self.bin2_pos[2] + 0.1
+            Conveyor_belt_x_low < obj_pos[0] < Conveyor_belt_x_high
+            and Conveyor_belt_y_low < obj_pos[1] < Conveyor_belt_y_high
+            and self.Conveyor_belt2_pos[2] < obj_pos[2] < self.Conveyor_belt2_pos[2] + 0.1
         ):
             res = False
         return res
@@ -404,21 +392,21 @@ class PickPlace(SingleArmEnv):
         self.placement_initializer = SequentialCompositeSampler(name="ObjectSampler")
 
         # can sample anywhere in bin
-        bin_x_half = self.model.mujoco_arena.table_full_size[0] / 2 - 0.05
-        bin_y_half = self.model.mujoco_arena.table_full_size[1] / 2 - 0.05
+        Conveyor_belt_x_half = self.model.mujoco_arena.table_full_size[0] / 2 - 0.05
+        Conveyor_belt_y_half = self.model.mujoco_arena.table_full_size[1] / 2 - 0.05
 
         # each object should just be sampled in the bounds of the bin (with some tolerance)
         self.placement_initializer.append_sampler(
             sampler=UniformRandomSampler(
                 name="CollisionObjectSampler",
                 mujoco_objects=self.objects,
-                x_range=[-bin_x_half, bin_x_half],
-                y_range=[-bin_y_half, bin_y_half],
+                x_range=[-Conveyor_belt_x_half, Conveyor_belt_x_half],
+                y_range=[-Conveyor_belt_y_half, Conveyor_belt_y_half],
                 rotation=None,
                 rotation_axis='z',
                 ensure_object_boundary_in_range=True,
                 ensure_valid_placement=True,
-                reference_pos=self.bin1_pos,
+                reference_pos=self.Conveyor_belt1_pos,
                 z_offset=0.,
             )
         )
@@ -428,21 +416,21 @@ class PickPlace(SingleArmEnv):
         for vis_obj in self.visual_objects:
 
             # get center of target bin
-            bin_x_low = self.bin2_pos[0]
-            bin_y_low = self.bin2_pos[1]
+            Conveyor_belt_x_low = self.Conveyor_belt2_pos[0]
+            Conveyor_belt_y_low = self.Conveyor_belt2_pos[1]
             if index == 0 or index == 2:
-                bin_x_low -= self.bin_size[0] / 2
+                Conveyor_belt_x_low -= self.Conveyor_belt_size[0] / 2
             if index < 2:
-                bin_y_low -= self.bin_size[1] / 2
-            bin_x_high = bin_x_low + self.bin_size[0] / 2
-            bin_y_high = bin_y_low + self.bin_size[1] / 2
-            bin_center = np.array([
-                (bin_x_low + bin_x_high) / 2., 
-                (bin_y_low + bin_y_high) / 2., 
+                Conveyor_belt_y_low -= self.Conveyor_belt_size[1] / 2
+            Conveyor_belt_x_high = Conveyor_belt_x_low + self.Conveyor_belt_size[0] / 2
+            Conveyor_belt_y_high = Conveyor_belt_y_low + self.Conveyor_belt_size[1] / 2
+            Conveyor_belt_center = np.array([
+                (Conveyor_belt_x_low + Conveyor_belt_x_high) / 2., 
+                (Conveyor_belt_y_low + Conveyor_belt_y_high) / 2., 
             ])
 
             # placement is relative to object bin, so compute difference and send to placement initializer
-            rel_center = bin_center - self.bin1_pos[:2]
+            rel_center = Conveyor_belt_center - self.Conveyor_belt1_pos[:2]
 
             self.placement_initializer.append_sampler(
                 sampler=UniformRandomSampler(
@@ -454,8 +442,8 @@ class PickPlace(SingleArmEnv):
                     rotation_axis='z',
                     ensure_object_boundary_in_range=False,
                     ensure_valid_placement=False,
-                    reference_pos=self.bin1_pos,
-                    z_offset=self.bin2_pos[2] - self.bin1_pos[2],
+                    reference_pos=self.Conveyor_belt1_pos,
+                    z_offset=self.Conveyor_belt2_pos[2] - self.Conveyor_belt1_pos[2],
                 )
             )
             index += 1
@@ -467,12 +455,12 @@ class PickPlace(SingleArmEnv):
         super()._load_model()
 
         # Adjust base pose accordingly
-        xpos = self.robots[0].robot_model.base_xpos_offset["bins"]
+        xpos = self.robots[0].robot_model.base_xpos_offset["belts"]
         self.robots[0].robot_model.set_base_xpos(xpos)
 
         # load model for table top workspace
         mujoco_arena = BinsArena(
-            bin1_pos=self.bin1_pos,
+            Conveyor_belt1_pos=self.Conveyor_belt1_pos,
             table_full_size=self.table_full_size,
             table_friction=self.table_friction
         )
@@ -481,12 +469,12 @@ class PickPlace(SingleArmEnv):
         mujoco_arena.set_origin([0, 0, 0])
 
         # store some arena attributes
-        self.bin_size = mujoco_arena.table_full_size
+        self.Conveyor_belt_size = mujoco_arena.table_full_size
 
         self.objects = []
         self.visual_objects = []
         for vis_obj_cls, obj_name in zip(
-                (MilkVisualObject, BreadVisualObject, CerealVisualObject, CanVisualObject, iPhone12ProMaxVisualObject),
+                (iPhone12ProMaxVisualObject, MilkVisualObject),
                 self.obj_names,
         ):
             vis_name = "Visual" + obj_name
@@ -494,7 +482,7 @@ class PickPlace(SingleArmEnv):
             self.visual_objects.append(vis_obj)
 
         for obj_cls, obj_name in zip(
-                (MilkObject, BreadObject, CerealObject, CanObject, iPhone12ProMaxObject),
+                (iPhone12ProMaxObject, MilkObject),
                 self.obj_names,
         ):
             obj = obj_cls(name=obj_name)
@@ -528,21 +516,21 @@ class PickPlace(SingleArmEnv):
             self.obj_geom_id[obj.name] = [self.sim.model.geom_name2id(g) for g in obj.contact_geoms]
 
         # keep track of which objects are in their corresponding bins
-        self.objects_in_bins = np.zeros(len(self.objects))
+        self.objects_on_belts = np.zeros(len(self.objects))
 
         # target locations in bin for each object type
-        self.target_bin_placements = np.zeros((len(self.objects), 3))
+        self.target_belt_placements = np.zeros((len(self.objects), 3))
         for i, obj in enumerate(self.objects):
-            bin_id = i
-            bin_x_low = self.bin2_pos[0]
-            bin_y_low = self.bin2_pos[1]
-            if bin_id == 0 or bin_id == 2:
-                bin_x_low -= self.bin_size[0] / 2.
-            if bin_id < 2:
-                bin_y_low -= self.bin_size[1] / 2.
-            bin_x_low += self.bin_size[0] / 4.
-            bin_y_low += self.bin_size[1] / 4.
-            self.target_bin_placements[i, :] = [bin_x_low, bin_y_low, self.bin2_pos[2]]
+            belt_id = i
+            Conveyor_belt_x_low = self.Conveyor_belt2_pos[0]
+            Conveyor_belt_y_low = self.Conveyor_belt2_pos[1]
+            if belt_id == 0 or belt_id == 2:
+                Conveyor_belt_x_low -= self.Conveyor_belt_size[0] / 2.
+            if belt_id < 2:
+                Conveyor_belt_y_low -= self.Conveyor_belt_size[1] / 2.
+            Conveyor_belt_x_low += self.Conveyor_belt_size[0] / 4.
+            Conveyor_belt_y_low += self.Conveyor_belt_size[1] / 4.
+            self.target_belt_placements[i, :] = [Conveyor_belt_x_low, Conveyor_belt_y_low, self.Conveyor_belt2_pos[2]]
 
     def _setup_observables(self):
         """
@@ -674,8 +662,8 @@ class PickPlace(SingleArmEnv):
                     self.sim.data.set_joint_qpos(obj.joints[0], np.concatenate([np.array(obj_pos), np.array(obj_quat)]))
 
         # Set the bins to the desired position
-        self.sim.model.body_pos[self.sim.model.body_name2id("bin1")] = self.bin1_pos
-        self.sim.model.body_pos[self.sim.model.body_name2id("bin2")] = self.bin2_pos
+        self.sim.model.body_pos[self.sim.model.body_name2id("Conveyor_belt1")] = self.Conveyor_belt1_pos
+        self.sim.model.body_pos[self.sim.model.body_name2id("Conveyor_belt2")] = self.Conveyor_belt2_pos
 
         # Move objects out of the scene depending on the mode
         obj_names = {obj.name for obj in self.objects}
@@ -686,8 +674,6 @@ class PickPlace(SingleArmEnv):
                     self.object_id = i
                     break
         elif self.single_object_mode == 2:
-            print("self.object_id", self.object_id)
-            print("self.objects", self.objects)
             self.obj_to_use = self.objects[self.object_id].name
         if self.single_object_mode in {1, 2}:
             obj_names.remove(self.obj_to_use)
@@ -703,26 +689,26 @@ class PickPlace(SingleArmEnv):
 
     def _check_success(self):
         """
-        Check if all objects have been successfully placed in their corresponding bins.
+        Check if all objects have been successfully placed on their corresponding belts.
 
         Returns:
             bool: True if all objects are placed correctly
         """
-        # remember objects that are in the correct bins
+        # remember objects that are on the correct belts
         gripper_site_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
         for i, obj in enumerate(self.objects):
             obj_str = obj.name
             obj_pos = self.sim.data.body_xpos[self.obj_body_id[obj_str]]
             dist = np.linalg.norm(gripper_site_pos - obj_pos)
             r_reach = 1 - np.tanh(10.0 * dist)
-            self.objects_in_bins[i] = int((not self.not_in_bin(obj_pos, i)) and r_reach < 0.6)
+            self.objects_on_belts[i] = int((not self.not_on_belt(obj_pos, i)) and r_reach < 0.6)
 
         # returns True if a single object is in the correct bin
         if self.single_object_mode in {1, 2}:
-            return np.sum(self.objects_in_bins) > 0
+            return np.sum(self.objects_on_belts) > 0
 
         # returns True if all objects are in correct bins
-        return np.sum(self.objects_in_bins) == len(self.objects)
+        return np.sum(self.objects_on_belts) == len(self.objects)
 
     def visualize(self, vis_settings):
         """
@@ -755,66 +741,6 @@ class PickPlace(SingleArmEnv):
                 target_type="body",
             )
 
-
-class PickPlaceSingle(PickPlace):
-    """
-    Easier version of task - place one object into its bin.
-    A new object is sampled on every reset.
-    """
-
-    def __init__(self, **kwargs):
-        assert "single_object_mode" not in kwargs, "invalid set of arguments"
-        super().__init__(single_object_mode=1, **kwargs)
-
-
-class PickPlaceMilk(PickPlace):
-    """
-    Easier version of task - place one milk into its bin.
-    """
-
-    def __init__(self, **kwargs):
-        assert (
-                "single_object_mode" not in kwargs and "object_type" not in kwargs
-        ), "invalid set of arguments"
-        super().__init__(single_object_mode=2, object_type="milk", **kwargs)
-
-
-class PickPlaceBread(PickPlace):
-    """
-    Easier version of task - place one bread into its bin.
-    """
-
-    def __init__(self, **kwargs):
-        assert (
-                "single_object_mode" not in kwargs and "object_type" not in kwargs
-        ), "invalid set of arguments"
-        super().__init__(single_object_mode=2, object_type="bread", **kwargs)
-
-
-class PickPlaceCereal(PickPlace):
-    """
-    Easier version of task - place one cereal into its bin.
-    """
-
-    def __init__(self, **kwargs):
-        assert (
-                "single_object_mode" not in kwargs and "object_type" not in kwargs
-        ), "invalid set of arguments"
-        super().__init__(single_object_mode=2, object_type="cereal", **kwargs)
-
-
-class PickPlaceCan(PickPlace):
-    """
-    Easier version of task - place one can into its bin.
-    """
-
-    def __init__(self, **kwargs):
-        assert (
-                "single_object_mode" not in kwargs and "object_type" not in kwargs
-        ), "invalid set of arguments"
-        super().__init__(single_object_mode=2, object_type="can", **kwargs)
-
-
 class PickPlaceiPhone(PickPlace):
     """
     Easier version of task - place one iPhone into its bin.
@@ -824,4 +750,4 @@ class PickPlaceiPhone(PickPlace):
         assert (
                 "single_object_mode" not in kwargs and "object_type" not in kwargs
         ), "invalid set of arguments"
-        super().__init__(single_object_mode=2, object_type="iphone12promax", **kwargs)
+        super().__init__(single_object_mode=2, object_type="iPhone12ProMax", **kwargs)
