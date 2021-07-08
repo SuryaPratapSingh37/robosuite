@@ -135,11 +135,13 @@ class Controller(object, metaclass=abc.ABCMeta):
             self.sim.forward()
 
             self.ee_pos = np.array(self.sim.data.site_xpos[self.sim.model.site_name2id(self.eef_name)])
+            # print("ee_pos in base controller.py",self.ee_pos)
             self.ee_ori_mat = np.array(self.sim.data.site_xmat[self.sim.model.site_name2id(self.eef_name)].reshape([3, 3]))
             self.ee_pos_vel = np.array(self.sim.data.site_xvelp[self.sim.model.site_name2id(self.eef_name)])
             self.ee_ori_vel = np.array(self.sim.data.site_xvelr[self.sim.model.site_name2id(self.eef_name)])
 
             self.joint_pos = np.array(self.sim.data.qpos[self.qpos_index])
+            #print("joint_pos in base controller.py",self.joint_pos)
             self.joint_vel = np.array(self.sim.data.qvel[self.qvel_index])
 
             self.J_pos = np.array(self.sim.data.get_site_jacp(self.eef_name).reshape((3, -1))[:, self.qvel_index])
