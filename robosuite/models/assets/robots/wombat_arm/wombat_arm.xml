@@ -52,7 +52,7 @@
         <exclude body1="base_link" body2="branch2_clevis_link"/><!--original-->
         <exclude body1="base_link" body2="branch1_clevis_link"/><!--original-->
         <exclude body1="base_link" body2="branch3_clevis_link"/><!--original-->
-        <exclude body1="base_link" body2="gripper"/><!--original-->
+        <!-- <exclude body1="base_link" body2="gripper"/> --><!--original-->
         <!-- <exclude body1="base_link" body2="branch2_ee_link"/>
         <exclude body1="base_link" body2="branch1_ee_link"/>
         <exclude body1="base_link" body2="branch3_ee_link"/>
@@ -62,15 +62,15 @@
         <exclude body1="base_link" body2="ee_plate_3_link"/>
         <exclude body1="base_link" body2="point_mass"/>
         <exclude body1="base_link" body2="branch1_ee_2_link"/> -->
-        
-        <!-- <exclude body1="branch1_link" body2="branch2_link"/>
+        <!-- 
+        <exclude body1="branch1_link" body2="branch2_link"/>
         <exclude body1="branch1_link" body2="branch3_link"/>
         <exclude body1="branch1_link" body2="branch2_pivot_link"/>
         <exclude body1="branch1_link" body2="branch1_pivot_link"/>
         <exclude body1="branch1_link" body2="branch3_pivot_link"/>
         <exclude body1="branch1_link" body2="branch2_linear_link"/> -->
         <exclude body1="branch1_link" body2="branch1_linear_link"/> <!--original-->
-        <exclude body1="branch1_link" body2="gripper"/><!--original-->
+        <!-- <exclude body1="branch1_link" body2="gripper"/> --><!--original-->
         <!-- <exclude body1="branch1_link" body2="branch3_linear_link"/>
         <exclude body1="branch1_link" body2="branch2_clevis_link"/>
         <exclude body1="branch1_link" body2="branch1_clevis_link"/>
@@ -84,13 +84,13 @@
         <exclude body1="branch1_link" body2="ee_plate_3_link"/>
         <exclude body1="branch1_link" body2="point_mass"/>
         <exclude body1="branch1_link" body2="branch1_ee_2_link"/> -->
-
-        <!-- <exclude body1="branch2_link" body2="branch3_link"/>
+<!-- 
+        <exclude body1="branch2_link" body2="branch3_link"/>
         <exclude body1="branch2_link" body2="branch2_pivot_link"/>
         <exclude body1="branch2_link" body2="branch1_pivot_link"/>
         <exclude body1="branch2_link" body2="branch3_pivot_link"/> -->
         <exclude body1="branch2_link" body2="branch2_linear_link"/> <!--original-->
-        <exclude body1="branch2_link" body2="gripper"/><!--original-->
+        <!-- <exclude body1="branch2_link" body2="gripper"/> --><!--original-->
         <!-- <exclude body1="branch2_link" body2="branch1_linear_link"/>
         <exclude body1="branch2_link" body2="branch3_linear_link"/>
         <exclude body1="branch2_link" body2="branch2_clevis_link"/>
@@ -112,7 +112,7 @@
         <exclude body1="branch3_link" body2="branch2_linear_link"/>
         <exclude body1="branch3_link" body2="branch1_linear_link"/> -->
         <exclude body1="branch3_link" body2="branch3_linear_link"/> <!--original-->
-        <exclude body1="branch3_link" body2="gripper"/><!--original-->
+        <!-- <exclude body1="branch3_link" body2="gripper"/> --><!--original-->
         <!-- <exclude body1="branch3_link" body2="branch2_clevis_link"/>
         <exclude body1="branch3_link" body2="branch1_clevis_link"/>
         <exclude body1="branch3_link" body2="branch3_clevis_link"/>
@@ -126,7 +126,7 @@
         <exclude body1="branch3_link" body2="point_mass"/>
         <exclude body1="branch3_link" body2="branch1_ee_2_link"/> -->
 
-<!--         <exclude body1="branch1_pivot_link" body2="branch2_pivot_link"/>
+        <!-- <exclude body1="branch1_pivot_link" body2="branch2_pivot_link"/>
         <exclude body1="branch1_pivot_link" body2="branch3_pivot_link"/>
         <exclude body1="branch1_pivot_link" body2="branch2_linear_link"/>
         <exclude body1="branch1_pivot_link" body2="branch1_linear_link"/>
@@ -338,8 +338,6 @@
                             <joint name="branch1_clevis_joint" pos="0 0 0" axis="1 0 0" limited="true" range="-1 1" damping="0.1" />
                             <!--joint name="branch1_clevis_joint" pos="0 0 0" axis="1 0 0" damping="0.1" /-->
                             <geom name="branch1_clevis_geom" pos="0 0 -0.008" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.752941 0.752941 0.752941 1" mesh="branch1_clevis_link" />
-                            <!--added later-->
-                            <geom type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="branch1_clevis_link" />
                             <!--geom name="branch1_clevis_geom2" pos="0 0 -0.008" type="box" contype="0" conaffinity="0" group="1" rgba="0.752941 0.752941 0.752941 1" size="0.1 0.1 0.0000001" /-->
                             <!--geom pos="0 0 -0.008" type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="branch1_clevis_link" /-->
                             <!--body name="branch1_ee_link" pos="0 -0.02166 -0.03748" quat=" 0.4311 0.902 0 0"-->
@@ -351,12 +349,11 @@
                                 <joint name="branch1_ee_joint" pos="0 0 0" axis="0 0 -1" damping="0.1" />
                                 <!--joint name="branch1_ee_joint" pos="0 0 0" axis="0 0 -1" limited="true" range="-0.2 0.2" damping="10" /-->
                                 <geom name="branch1_ee_geom" quat="0.8775826 0 0.4794255 0" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.29804 0.29804 0.29804 1" mesh="branch1_ee_link" />
-                                <body name="gripper" pos="-0.14 -0.12 0.1" quat="-1.57 0 -0.45 0">
+                                <!-- <geom name="branch1__ee_geom" type="mesh" group="0" mesh="branch1_clevis_link" size="0.00001 0.00001 0.00001" /> -->
+                                <!-- <body name="gripper" pos="-0.14 -0.12 0.1" quat="-1.57 0 -0.45 0">
                                     <inertial pos="9.6253e-09 -0.00024705 2.9244e-08" quat="0.706964 0.0142035 0.0142035 0.706964" mass="0.1066" fullinertia="4.818e-05 6.913e-05 6.913e-05 0.0 0.0 2.095e-05" />
                                     <geom name="gripper" quat="0.8775826 0 0.4794255 0" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.29804 0.29804 0.29804 1" mesh="gripper" />
-                                    <!--added later-->
-                                    <!-- <geom type="mesh" rgba="0.752941 0.752941 0.752941 1" mesh="gripper" /> -->
-                                    <joint name="gripper_joint" pos="0 0 0" axis="0 0 -1" damping="0.1" />
+                                    <joint name="gripper_joint" pos="0 0 0" axis="0 0 -1" damping="0.1" /> -->
                                 <!--<body name="base_bottom" pos="-0.033 -0.07 -0.1" quat="0 0 0 1">
                                     <inertial pos="9.6253e-09 -0.00024705 2.9244e-08" quat="0.706964 0.0142035 0.0142035 0.706964" mass="0.1066" fullinertia="4.818e-05 6.913e-05 6.913e-05 0.0 0.0 2.095e-05" />
                                     <geom name="base_bottom" quat="0 0 0 1" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.29804 0.29804 0.29804 1" mesh="base_bottom" />
@@ -365,7 +362,7 @@
                                     <inertial pos="9.6253e-09 -0.00024705 2.9244e-08" quat="0.706964 0.0142035 0.0142035 0.706964" mass="0.1066" fullinertia="4.818e-05 6.913e-05 6.913e-05 0.0 0.0 2.095e-05" />
                                     <geom name="left_finger" quat="0 0 0 1" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.29804 0.29804 0.29804 1" mesh="left_finger" />
                                     <joint name="left_finger_joint" pos="0 0 0" axis="0 0 -1" damping="0.1" /> -->
-                                <body name="right_hand" pos="0.2 0 0" quat="0 0 0 0">
+                                <body name="right_hand" pos="0 0 0" quat="0 0 0 0">
                                   <!--  This sites were added for visualization. They are all standardized between models -->
                                   <!--  Position mimics the gripper attachment point (right_hand)  -->
                                   <!--   Y-axis should be perpendicular to grasping motion, and Z-axis should point out of the robot eef  -->
@@ -378,7 +375,7 @@
                                   <!--  To add gripper  -->
                                 </body>
                                 
-                                </body>
+                                <!-- </body> -->
                                 <!-- </body> -->
                                 <body name="ee_plate_1_link" pos="0.001 -0.0 -0.0287" quat=" 1 0 0 0">
                                 <!--inertial pos="9.6253e-09 -0.00024705 2.9244e-08" quat="0.706964 0.0142035 0.0142035 0.706964" mass="0.1066" diaginertia="9.0074e-05 4.8181e-05 4.818e-05" /-->
@@ -525,7 +522,7 @@
 
         <weld body1="ee_plate_2_link" body2="branch2_ee_link" active="true" solref='0.005 1' relpose="0 0 0 0 0 0 0"/>
         <weld body1="ee_plate_3_link" body2="branch3_ee_link" active="true" solref='0.005 1' relpose="0 0 0 0 0 0 0"/>
-        <weld body1="branch1_ee_link" body2="gripper" active="true" solref='0.005 1' relpose="0 0 0 0 0 0 0"/>
+        <!-- <weld body1="branch1_ee_link" body2="gripper" active="true" solref='0.005 1' relpose="0 0 0 0 0 0 0"/> -->
 
         
     </equality>
