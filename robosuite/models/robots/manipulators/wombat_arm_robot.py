@@ -26,7 +26,7 @@ class Wombat_arm(ManipulatorModel):
 	@property
 	def default_gripper(self):
 		print("default_gripper() wombat_arm_robot.py file")
-		return None#"D3_gripper"
+		return "D3_gripper"
 
 	@property
 	def default_controller_config(self):
@@ -37,7 +37,7 @@ class Wombat_arm(ManipulatorModel):
 	def init_qpos(self):
 		#return np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
 		print("init_qpos() wombat_arm_robot.py file")
-		return np.zeros(19)
+		return np.zeros(18)
 
 	@property
 	def base_xpos_offset(self):
