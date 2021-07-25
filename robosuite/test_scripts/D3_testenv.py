@@ -196,7 +196,9 @@ while t<t_final:
 	##iphonebox pose
 	print("iphonebox_pose: ",sim.data.get_joint_qpos('iphonebox_joint0'))
 	##gripper joint pose
-	sim.data.set_joint_qpos('gripper0_left_finger_joint', -0.1)
-	sim.data.set_joint_qpos('gripper0_right_finger_joint',-0.1)
+	sim.data.set_joint_qpos('gripper0_left_finger_joint', -0.18)
+	sim.data.set_joint_qpos('gripper0_right_finger_joint',-0.18)
+	print(sim.data.get_joint_qvel('gripper0_left_finger_joint'))
+	print(sim.data.get_joint_qvel('gripper0_right_finger_joint'))
 	
 	t=t+1
