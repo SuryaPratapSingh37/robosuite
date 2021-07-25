@@ -59,8 +59,8 @@ def PD_signal_scale(ee_pos,joint_vals):
 world = MujocoWorldBase()
 mujoco_robot = Wombat_arm()
 
-gripper = gripper_factory(None)
-#gripper = gripper_factory('RethinkGripper')
+# gripper = gripper_factory(None)
+gripper = gripper_factory('D3_gripper')
 #gripper.hide_visualization()
 mujoco_robot.add_gripper(gripper)
 
@@ -196,6 +196,7 @@ while t<t_final:
 	##iphonebox pose
 	print("iphonebox_pose: ",sim.data.get_joint_qpos('iphonebox_joint0'))
 	##gripper joint pose
-	# print("gripper_joint_pose: ",sim.data.get_joint_qpos('robot0_gripper_join'))
+	sim.data.set_joint_qpos('gripper0_left_finger_joint', -0.1)
+	sim.data.set_joint_qpos('gripper0_right_finger_joint',-0.1)
 	
 	t=t+1
