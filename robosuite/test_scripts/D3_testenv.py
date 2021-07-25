@@ -195,10 +195,19 @@ while t<t_final:
 	sim.data.set_joint_qvel('box_joint0', [0, 0.4, 0, 0, 0, 0])
 	##iphonebox pose
 	print("iphonebox_pose: ",sim.data.get_joint_qpos('iphonebox_joint0'))
-	##gripper joint pose
+	##setting gripper fingers values
 	sim.data.set_joint_qpos('gripper0_left_finger_joint', -0.18)
 	sim.data.set_joint_qpos('gripper0_right_finger_joint',-0.18)
+	##printing gripper fingers velocities
 	print(sim.data.get_joint_qvel('gripper0_left_finger_joint'))
 	print(sim.data.get_joint_qvel('gripper0_right_finger_joint'))
+	"""Available "joint" names = ('robot0_branch1_joint', 'robot0_branch1_pivot_joint', 'robot0_branch1_linear_joint', 
+	'robot0_branch1_linear_revolute_joint', 'robot0_branch1_clevis_joint', 'robot0_branch1_ee_joint', 'gripper0_left_finger_joint',
+	 'gripper0_right_finger_joint', 'robot0_branch2_joint', 'robot0_branch2_pivot_joint', 'robot0_branch2_linear_joint', 
+	 'robot0_branch2_linear_revolute_joint', 'robot0_branch2_clevis_joint', 'robot0_branch2_ee_joint', 'robot0_branch3_joint',
+	  'robot0_branch3_pivot_joint', 'robot0_branch3_linear_joint', 'robot0_branch3_linear_revolute_joint', 
+	  'robot0_branch3_clevis_joint', 'robot0_branch3_ee_joint', 'iphonebox_joint0', 'box_joint0')"""
+	##Just like the code between lines 195-203 you can either set the 'joint pos' and 'joint_vel' or you can get/obtain the 'joint_pos' and 'joint_vel'
+
 	
 	t=t+1
