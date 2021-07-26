@@ -60,9 +60,9 @@ world = MujocoWorldBase()
 mujoco_robot = Wombat_arm()
 
 # gripper = gripper_factory(None)
-gripper = gripper_factory('D3_gripper')
+# gripper = gripper_factory('D3_gripper')
 #gripper.hide_visualization()
-mujoco_robot.add_gripper(gripper)
+# mujoco_robot.add_gripper(gripper)
 
 # mujoco_robot.set_base_xpos([0.4, 0.06, 0])
 mujoco_robot.set_base_xpos([0, 0.0, 0])
@@ -100,7 +100,7 @@ viewer = MjViewer(sim)
 viewer.vopt.geomgroup[0] = 0 # disable visualization of collision mesh
 
 viewer.render()
-
+is_render = True
 t_final = 10000
 torque1=[[None]]*t_final
 torque2=[[None]]*t_final
@@ -118,28 +118,12 @@ ee_pose_current = []
 t_arr=np.linspace(timestep*t,timestep*t_final,t_final-t)
 
 
-#horizontal circle
-r=0.1
-tLin=2000
-dt=1.0/(t_final-t-tLin)
-target_traj1=np.array([[0,-r*np.sin(np.pi/2*(float(i)/tLin)),0.6,0,0,0] for i in range(0,tLin)])
-target_traj2=np.array([[-r*np.sin((i)*dt*np.pi*2),-r*np.cos(i*dt*np.pi*2),0.6,0,0,0] for i in range(t,t_final-tLin)])
-target_traj=np.block([[target_traj1],[target_traj2]])
-#vertical circle
-# r=0.1
-# dt=1.0/(t_final-t)
-# target_traj=np.array([[r*np.sin(i*dt*np.pi*2),0.0,0.7-r*np.cos(i*dt*np.pi*2),0,0,0] for i in range(t,t_final)])
-# target_traj=np.array([[-0.2,0,0.7,0,0,0] for i in range(t,t_final)])
-#convert to joint trajectory
-joint_target_traj=trg.jointTraj(target_traj)
-sim.set_state(sim_state)
-ee_pose_des = []
+target_traj = np.array([0,0,0.6,0,0,0]).reshape(1,-1)	#hardware frame/real frame
 
-#joint values in the simulation
-j_actual=np.zeros((t_final-t,6))
-j_actual_real=np.zeros((t_final-t,6))
-#goal joint values for simulation to follow
-j_goal=np.zeros((t_final-t,6))
+
+print("target_traj shape,", target_traj.shape)
+joint_target_traj=trg.jointTraj(target_traj) 	#hardware frame/real frame
+
 
 while t<t_final:
 	#rotary
@@ -153,23 +137,15 @@ while t<t_final:
 	# print("q_pos_last",q_pos_last)
 	sim.step()
 	#print(sim.data.get_joint_qpos("branch1_joint"),sim.data.get_joint_qpos("branch2_joint"),sim.data.get_joint_qpos("branch3_joint"),sim.data.get_joint_qpos("branch1_linear_joint"),sim.data.get_joint_qpos("branch2_linear_joint"),sim.data.get_joint_qpos("branch3_linear_joint"))
-	if True:
+	if is_render:
 		viewer.render()
 
 	#current target joint values, in IK frame
-	joint_real=joint_target_traj[0]
-	ee_pose=invK.real2sim_wrapper(target_traj[0])
-	# ee_pose=[0.2,0,0.7,0,0,0]
-	# print("target in real frame",target_traj[t])
-	# print("target in sim frame",ee_pose)
-	ee_pose_des.append(ee_pose)
+	joint_real=joint_target_traj[0]	#hardware frame/real frame
+	ee_pose=invK.real2sim_wrapper(target_traj[0])	#sim frame
 	#convert current target joint values, in sim frame
 	joint_sim=invK.ik_wrapper(joint_real)
-	# print("joint_real",joint_real)
-	# print("joint_sim",joint_sim)
-	j_goal[t,:]=np.array(joint_sim)
-	#calculate/send PD control signal to the motors
-	# q_pos_last = np.array([sim.data.get_joint_qpos("robot0_branch1_joint"),sim.data.get_joint_qpos("robot0_branch2_joint"),sim.data.get_joint_qpos("robot0_branch3_joint"),sim.data.get_joint_qpos("robot0_branch1_linear_joint"),sim.data.get_joint_qpos("robot0_branch2_linear_joint"),sim.data.get_joint_qpos("robot0_branch3_linear_joint")])
+	
 	PD_scale=PD_signal_scale(target_traj[0],joint_target_traj[0])
 	# print("PD_scale",PD_scale)
 	PD_signal=[PD_controller_rot(joint_sim[3],sim.data.get_joint_qpos("robot0_branch1_joint"),q_pos_last[0],PD_scale[0]),
@@ -180,27 +156,31 @@ while t<t_final:
 			   PD_controller_lin(joint_sim[2],sim.data.get_joint_qpos("robot0_branch3_linear_joint"),q_pos_last[5],PD_scale[5])]
 	# print("PD_signal",PD_signal)
 	
-	sim.data.ctrl[0]=PD_signal[0]
-	torque1[t]=PD_scale[0]
-	sim.data.ctrl[1]=PD_signal[1]
-	torque2[t]=PD_scale[1]
-	sim.data.ctrl[2]=PD_signal[2]
-	torque3[t]=PD_scale[2]
-	sim.data.ctrl[3]=PD_signal[3]
-	torque4[t]=PD_scale[3]
-	sim.data.ctrl[4]=PD_signal[4]
-	torque5[t]=PD_scale[4]
-	sim.data.ctrl[5]=PD_signal[5]
-	torque6[t]=PD_scale[5]
+	sim.data.ctrl[0:6] = PD_signal[0:6]
+	# torque[0:6,t] = PD_scale[0:6]
+
+	# sim.data.ctrl[0]=PD_signal[0]
+	# torque1[t]=PD_scale[0]
+	# sim.data.ctrl[1]=PD_signal[1]
+	# torque2[t]=PD_scale[1]
+	# sim.data.ctrl[2]=PD_signal[2]
+	# torque3[t]=PD_scale[2]
+	# sim.data.ctrl[3]=PD_signal[3]
+	# torque4[t]=PD_scale[3]
+	# sim.data.ctrl[4]=PD_signal[4]
+	# torque5[t]=PD_scale[4]
+	# sim.data.ctrl[5]=PD_signal[5]
+	# torque6[t]=PD_scale[5]
 	sim.data.set_joint_qvel('box_joint0', [0, 0.4, 0, 0, 0, 0])
 	##iphonebox pose
-	print("iphonebox_pose: ",sim.data.get_joint_qpos('iphonebox_joint0'))
+	# print("iphonebox_pose: ",sim.data.get_joint_qpos('iphonebox_joint0'))
+	print("EE_pose:, ",target_traj[0])
 	##setting gripper fingers values
-	sim.data.set_joint_qpos('gripper0_left_finger_joint', -0.18)
-	sim.data.set_joint_qpos('gripper0_right_finger_joint',-0.18)
-	##printing gripper fingers velocities
-	print(sim.data.get_joint_qvel('gripper0_left_finger_joint'))
-	print(sim.data.get_joint_qvel('gripper0_right_finger_joint'))
+	# sim.data.set_joint_qpos('gripper0_left_finger_joint', -0.18)
+	# sim.data.set_joint_qpos('gripper0_right_finger_joint',-0.18)
+	# ##printing gripper fingers velocities
+	# print(sim.data.get_joint_qvel('gripper0_left_finger_joint'))
+	# print(sim.data.get_joint_qvel('gripper0_right_finger_joint'))
 	"""Available "joint" names = ('robot0_branch1_joint', 'robot0_branch1_pivot_joint', 'robot0_branch1_linear_joint', 
 	'robot0_branch1_linear_revolute_joint', 'robot0_branch1_clevis_joint', 'robot0_branch1_ee_joint', 'gripper0_left_finger_joint',
 	 'gripper0_right_finger_joint', 'robot0_branch2_joint', 'robot0_branch2_pivot_joint', 'robot0_branch2_linear_joint', 
