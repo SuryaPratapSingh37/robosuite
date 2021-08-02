@@ -21,7 +21,7 @@ class D3_pick_place_env(object):
 	def __init__ (self,is_render):
 
 		self.action_dim = 6
-		self.obs_dim = 28#26
+		self.obs_dim = 26
 		self.q_pos_last = np.zeros(self.action_dim)
 		self.observation_current = np.zeros(self.obs_dim)
 		self.observation_last = np.zeros(self.obs_dim)
@@ -29,25 +29,6 @@ class D3_pick_place_env(object):
 		self.is_render = True
 		self.done = False
 		pass
-
-	def angDiff(self,a1,a2):
-		d1=(a1-a2)%(2*np.pi)
-		d2=(a2-a1)%(2*np.pi)
-		if d1<d2:
-			return -d1
-		return d2
-		#given two pairs of joint values, finds the rotary values for j2 that
-		#are closest to j1. Assumes values are in rad
-	def nextClosestJointRad(self,j1,j2):
-		j2c=np.copy(j2)
-		for i in range(0,3):
-			aDiff1=self.angDiff(j1[i],j2[i])
-			aDiff2=self.angDiff(j1[i],j2[i]+np.pi)
-			if abs(aDiff1)<abs(aDiff2):
-				j2c[i]=j1[i]+aDiff1
-			else:
-				j2c[i]=j1[i]+aDiff2
-		return j2c
 
 	def set_env(self):
 
@@ -80,8 +61,8 @@ class D3_pick_place_env(object):
 
 		self.timestep= 0.0005
 		self.sim_state = self.sim.get_state()
-		self.joint_names = ['robot0_branch1_linear_joint','robot0_branch2_linear_joint','robot0_branch3_linear_joint',
-							'robot0_branch1_joint','robot0_branch2_joint','robot0_branch3_joint']
+		self.joint_names = ['robot0_branch1_joint','robot0_branch2_joint','robot0_branch3_joint',
+				   			'robot0_branch1_linear_joint','robot0_branch2_linear_joint','robot0_branch3_linear_joint']
 
 	def get_signal(self,action,obs_last,obs_last2last):
 
@@ -94,9 +75,7 @@ class D3_pick_place_env(object):
 		joint_real=joint_target_action
 		ee_pose=invK.real2sim_wrapper(action[0])
 		self.joint_sim=invK.ik_wrapper(joint_real[0])
-		j1 = np.array([self.sim.data.get_joint_qpos("robot0_branch1_joint"),self.sim.data.get_joint_qpos("robot0_branch2_joint"),self.sim.data.get_joint_qpos("robot0_branch3_joint")])
-		j2 = np.array([self.joint_sim[3],self.joint_sim[4],self.joint_sim[5]])
-		self.joint_sim[3:6] = self.nextClosestJointRad(j1,j2)
+
 		PD_scale= self.PD_signal_scale(action[0],joint_real[0])
 
 		PD_signal=[self.PD_controller_rot(self.joint_sim[3],obs_last[0],obs_last2last[0],PD_scale[0]),
@@ -109,20 +88,6 @@ class D3_pick_place_env(object):
 
 		return PD_signal
 
-	def grip_signal(self,des_state,obs_last,obs_last2last):
-		if des_state=='open':
-			left_finger_open = -0.287884
-			right_finger_open = -0.295456
-
-			grip_signal=[self.Gripper_PD_controller(left_finger_open,obs_last[26],obs_last2last[26]),
-			             self.Gripper_PD_controller(right_finger_open,obs_last[27],obs_last2last[27])]
-		if des_state=='close':
-			left_finger_close = 0.246598
-			right_finger_close = 0.241764
-
-			grip_signal=[self.Gripper_PD_controller(left_finger_close,obs_last[26],obs_last2last[26]),
-			             self.Gripper_PD_controller(right_finger_close,obs_last[27],obs_last2last[27])]
-		return grip_signal
 
 	def step(self,action):
 		# action = action.reshape(1,-1)
@@ -130,28 +95,23 @@ class D3_pick_place_env(object):
 		self.observation_last = self.observation_current
 		PD_signal = self.get_signal(action,self.observation_last,self.observation_last2last)
 		self.sim.data.ctrl[0:6] = PD_signal[0:6]
-		if action[6] > 0:
-			des_state='close'
-		else:
-			des_state='open'
-		self.sim.data.ctrl[6:8] = self.grip_signal(des_state,self.observation_last,self.observation_last2last)
-		self.clip_grip_action()
+		# self.sim.data.ctrl[6] = action[6]
 		# print("torque reading: ",self.sim.data.ctrl[0:6])
-		# print("action", action)
+		# self.sim.data.ctrl[7] = action[7]
 		self.sim.step()
 		if self.is_render:
 			self.viewer.render()
 		# print("sending steps")
-		self.observation_current = self.get_observation()
+		self.observation_current = self.get_obseravtion()
 		self.reward = self.calculate_reward(self.observation_current)
-		self.sim.data.set_joint_qvel('box_joint0', [0, 0.2, 0, 0, 0, 0])
+		self.sim.data.set_joint_qvel('box_joint0', [0, 0.3, 0, 0, 0, 0])
 		self.done = self.is_done
 		# ipdb.set_trace()
 		# print("sensor data: ",self.sim.data.sensordata)
 		return self.observation_current,self.reward,self.done,None
 
 
-	def get_observation(self):
+	def get_obseravtion(self):
 
 		observation = np.zeros(self.obs_dim)
 
@@ -174,8 +134,6 @@ class D3_pick_place_env(object):
 
 		observation[12:19] = self.sim.data.get_joint_qpos('iphonebox_joint0')
 		observation[19:26] = self.sim.data.sensordata[0:7]	#gripper base link pose
-		observation[26] = self.sim.data.get_joint_qpos('robot0_gripper_left_finger_joint')
-		observation[27] = self.sim.data.get_joint_qpos('robot0_gripper_right_finger_joint')
 		# print("gripper pose: ",self.sim.data.get_joint_qpos('robot0_gripper_base_link_joint'))
 		return observation
 
@@ -193,16 +151,16 @@ class D3_pick_place_env(object):
 
 	def PD_controller_rot(self,des,current,q_pos_last,scale):
 	
-		kp=10*scale #10 #20 
-		kd=4 #4 #1
+		kp=10*scale #20
+		kd=4 #1
 		qpos = des+kp*(des-current)-kd*(current-q_pos_last)
 		# print(kp*(des-current))
 		return qpos
 
 	def PD_controller_lin(self,des,current,q_pos_last,scale):
 		
-		kp=1000 #1000 #200
-		kd=1500 #1500
+		kp=1000 #200
+		kd=1500
 		qpos = des+kp*(des-current)-kd*(current-q_pos_last)
 		# print(kp*(des-current))
 		return qpos
@@ -217,19 +175,3 @@ class D3_pick_place_env(object):
 		scale=7
 		PD_scale_factor=((np.multiply(ee_xy_disp,lin_vals)**2)-1)*scale
 		return PD_scale_factor
-
-	def Gripper_PD_controller(self,des,current,last):
-		kp=10
-		kd=2
-		pos = des+kp*(des-current)-kd*(current-last)
-		return pos
-
-	def clip_grip_action(self):
-		if self.sim.data.get_joint_qpos('robot0_gripper_left_finger_joint')>0.25:
-			self.sim.data.set_joint_qpos('robot0_gripper_left_finger_joint', 0.246598)
-		if self.sim.data.get_joint_qpos('robot0_gripper_right_finger_joint')>0.25:
-			self.sim.data.set_joint_qpos('robot0_gripper_right_finger_joint', 0.241764)
-		if self.sim.data.get_joint_qpos('robot0_gripper_left_finger_joint')<-0.29:
-			self.sim.data.set_joint_qpos('robot0_gripper_left_finger_joint', -0.287884)
-		if self.sim.data.get_joint_qpos('robot0_gripper_right_finger_joint')<-0.30:
-			self.sim.data.set_joint_qpos('robot0_gripper_right_finger_joint', -0.295456)

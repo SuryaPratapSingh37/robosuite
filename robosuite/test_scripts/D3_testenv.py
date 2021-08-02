@@ -118,14 +118,15 @@ ee_pose_current = []
 t_arr=np.linspace(timestep*t,timestep*t_final,t_final-t)
 
 
-target_traj = np.array([0,0,0.6,0,0,0]).reshape(1,-1)	#hardware frame/real frame
-
-
-print("target_traj shape,", target_traj.shape)
-joint_target_traj=trg.jointTraj(target_traj) 	#hardware frame/real frame
 
 
 while t<t_final:
+
+	target_traj = np.array([0,0.0,0.6,0,0,0]).reshape(1,-1)	#hardware frame/real frame
+
+
+	print("target_traj shape,", target_traj.shape)
+	joint_target_traj=trg.jointTraj(target_traj) 	#hardware frame/real frame
 	#rotary
 	q_pos_last[0] = sim.data.get_joint_qpos("robot0_branch1_joint")
 	q_pos_last[1] = sim.data.get_joint_qpos("robot0_branch2_joint")
@@ -157,6 +158,8 @@ while t<t_final:
 	# print("PD_signal",PD_signal)
 	
 	sim.data.ctrl[0:6] = PD_signal[0:6]
+	sim.data.ctrl[6] = 0.2
+	sim.data.ctrl[7] = 0.2
 	# torque[0:6,t] = PD_scale[0:6]
 
 	# sim.data.ctrl[0]=PD_signal[0]
