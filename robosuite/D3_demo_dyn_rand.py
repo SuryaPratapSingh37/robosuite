@@ -35,15 +35,21 @@ def _preproc_inputs(obs, g):
     if args.cuda:
         inputs = inputs.cuda()
     return inputs
+def dyn_rand():
+	phone_x = 0.74#np.random.uniform(0.4, 0.8)
+	phone_speed = 0.2#np.random.uniform(0.20, 0.35)
+	phone_orient = 0.0
+	# phone_orient = np.random.uniform(-0.05, 0.05)
+	return phone_x, phone_speed, phone_orient
 
 if __name__ == '__main__':
     args = get_args()
     # load the model param
-    model_path = args.save_dir + args.env_name + '/model_with_dyn_rand_epoch_19.pt'
+    model_path = args.save_dir + args.env_name + '/Model_dyn_rand_epoch_50.pt'
     o_mean, o_std, g_mean, g_std, model = torch.load(model_path, map_location=lambda storage, loc: storage)
     # create the environment
     # env = PickPlace_env(args)
-    env = D3_pick_place_env(args,is_render=True)
+    env = D3_pick_place_env(args,is_render=False)
     # env = gym.make(args.env_name)
     # get the env param
     # observation = env.reset()
@@ -64,7 +70,7 @@ if __name__ == '__main__':
     Partial_success = 0
     Full_success = 0
     for i in range(args.demo_length):
-        phone_x, phone_speed, phone_orient = env.dyn_rand()
+        phone_x, phone_speed, phone_orient = dyn_rand()
         # reset the environment
         observation = env.reset(phone_x, phone_speed, phone_orient)
         # observation_,observation = env.robot_obs2obs(observation)
@@ -86,12 +92,12 @@ if __name__ == '__main__':
         time_reset = 250
         for t in range(env._max_episode_steps):
             # env.render()
-            if t%1000==0:
-                print(t)
+            # if t%1000==0:
+            #     print(t)
             # print("action_zero", action_zero)
             obs,reward,done,_ = env.step(action_zero)
             if t>=0 and t<1400 and pp==0:
-                action_network = np.zeros(6)
+                action_network = np.zeros(3)
                 action_zero[1] -= 0.0002 #motion happening here
                 if np.linalg.norm(obs_current[19]-obs_current[12])>0.002:
                     pos_x_dir = (0.02+obs_current[19]-obs_current[12])/np.abs(0.02+obs_current[19]-obs_current[12])
@@ -103,7 +109,7 @@ if __name__ == '__main__':
                 # print("Stage 1 ",pp)
             ### Calculate variables to pick ###
             elif t>=1400 and t<1500 and pp==0:
-                action_network = np.zeros(6)
+                action_network = np.zeros(3)
                 obs,reward,done,_ = env.step(action_zero) 
                 obs_current = obs['observation']
                 vel_iPhone = (obs_current[13] - obs_last[13])
@@ -112,7 +118,7 @@ if __name__ == '__main__':
                 # print("Stage 2 ",pp)
             ### calculate target velocity ###
             elif t == 1500 and pp==0:
-                action_network = np.zeros(6)
+                action_network = np.zeros(3)
                 vel_z = (obs_current[21] - 0.875)/int(steps_to_reach)
                 vel_y = (obs_current[20] - 0.0)/int(steps_to_reach)
                 # print("Stage 3 ",pp)
@@ -127,7 +133,7 @@ if __name__ == '__main__':
                     # ipdb.set_trace()
                     input_tensor = _preproc_inputs(obs_current, g)
                     pi = actor_network(input_tensor)
-                    action_network = _select_actions(pi)
+                    action_network = pi.detach().numpy().squeeze()
                     # print("input_tensor", input_tensor)
                     # print("pi", pi)
                     # print("action_network", action_network)
@@ -138,9 +144,9 @@ if __name__ == '__main__':
                 action_zero[0]+= action_network[0] #adding del_x to current_motion
                 action_zero[1]+= (vel_iPhone_rt)*0.002 + action_network[1] #adding del_y to motion
                 action_zero[2]+= vel_z*10 + action_network[2]  #adding del_z to motion
-                action_zero[3]+= action_network[3] #adding orient_x to current_motion
-                action_zero[4]+= action_network[4] #adding orient_y to motion
-                action_zero[5]+= action_network[5]  #adding orient_z to motion
+                # action_zero[3]+= action_network[3] #adding orient_x to current_motion
+                # action_zero[4]+= action_network[4] #adding orient_y to motion
+                # action_zero[5]+= action_network[5]  #adding orient_z to motion
                 if np.linalg.norm(obs_current[21]-0.875)<0.001 and pp == 1 and obs_current[26]< -0.29:
                     # print("stay!!")
                     action_zero[2] = pos_z
@@ -169,7 +175,7 @@ if __name__ == '__main__':
                 obs,reward,done,_ = env.step(action_zero)
                 obs_current = obs['observation']
                 # print("stage 5 {}, {}".format(pp,np.linalg.norm(obs_current[20]-obs_current[13])))
-                action_network = np.zeros(6)
+                action_network = np.zeros(3)
             obs_last = obs_current.copy()
             
         print("Expected goal: ",g)
@@ -181,4 +187,3 @@ if __name__ == '__main__':
         if reward[1]==50:
             Full_success = Full_success + 1
         print("Run no.: {}, Partial_successes: {}, Full_successes: {}".format(i+1,Partial_success,Full_success))
-        
